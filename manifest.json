@@ -1,0 +1,9 @@
+{
+  "name": "দ্য ইনসাইড রিপোর্ট বিডি",
+  "short_name": "ইনসাইড রিপোর্ট",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#b71c1c",
+  "theme_color": "#b71c1c",
+  "lang": "bn"
+}

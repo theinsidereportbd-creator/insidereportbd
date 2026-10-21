@@ -1,0 +1,11 @@
+{
+  "name": "inside-report-bd",
+  "version": "1.0.0",
+  "private": true,
+  "description": "দ্য ইনসাইড রিপোর্ট বিডি - বাংলাদেশের খবর এক জায়গায়",
+  "dependencies": {
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/cli": "^6.1.0",
+    "@capacitor/core": "^6.1.0"
+  }
+}

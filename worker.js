@@ -1,18 +1,14 @@
-// Cloudflare Worker: সব পত্রিকার RSS ফিড টেনে একসাথে JSON হিসেবে দেয়।
-// ৫ মিনিট ক্যাশ থাকে, তাই সার্ভারের উপর চাপ কম।
+// Cloudflare Worker: পত্রিকার RSS ফিড টেনে একসাথে JSON হিসেবে দেয়।
+// /api/news  -> খবরের তালিকা (৫ মিনিট ক্যাশ)
+// /api/check -> কোন ফিড কাজ করছে, কয়টা খবর, সবচেয়ে নতুন খবর কখনকার
 
 const SOURCES = [
-  { id: "prothomalo",    url: "https://www.prothomalo.com/feed/" },
-  { id: "dailystar",     url: "https://www.thedailystar.net/frontpage/rss.xml" },
-  { id: "jugantor",      url: "https://www.jugantor.com/feed/rss.xml" },
-  { id: "samakal",       url: "https://samakal.com/feed" },
-  { id: "kalerkantho",   url: "https://www.kalerkantho.com/rss.xml" },
-  { id: "banglatribune", url: "https://www.banglatribune.com/feed" },
-  { id: "dhakatribune",  url: "https://www.dhakatribune.com/feed" },
-  { id: "ittefaq",       url: "https://www.ittefaq.com.bd/feed" },
-  { id: "somoy",         url: "https://www.somoynews.tv/rss" },
-  { id: "jamuna",        url: "https://jamuna.tv/feed" }
+  { id: "prothomalo",  url: "https://www.prothomalo.com/feed/" },
+  { id: "dailystar",   url: "https://www.thedailystar.net/taxonomy/term/1/rss.xml" },
+  { id: "jagonews24",  url: "https://www.jagonews24.com/rss/rss.xml" }
 ];
+
+const MAX_AGE_MS = 10 * 24 * 3600 * 1000; // ১০ দিনের পুরোনো খবর বাদ
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -43,11 +39,19 @@ function strip(html) {
   return decode(html).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function parseDate(str) {
+  let ms = Date.parse(str);
+  if (!ms) return 0;
+  const d = new Date(ms);
+  if (d.getUTCFullYear() < 2000) { d.setUTCFullYear(d.getUTCFullYear() + 100); ms = d.getTime(); }
+  return ms;
+}
+
 function parseFeed(xml, sourceId) {
   const blocks = xml.match(/<item[\s>][\s\S]*?<\/item>|<entry[\s>][\s\S]*?<\/entry>/gi) || [];
-  return blocks.slice(0, 30).map((b) => {
+  return blocks.slice(0, 40).map((b) => {
     const desc = tag(b, "description") || tag(b, "summary") || tag(b, "content:encoded") || tag(b, "content");
-    let link = tag(b, "link") || attr(b, "link", "href");
+    const link = tag(b, "link") || attr(b, "link", "href");
     let image =
       attr(b, "media:content", "url") ||
       attr(b, "media:thumbnail", "url") ||
@@ -56,7 +60,7 @@ function parseFeed(xml, sourceId) {
       const m = /<img[^>]+src=["']([^"']+)/i.exec(decode(desc) + decode(tag(b, "content:encoded")));
       image = m ? m[1] : "";
     }
-    const date = Date.parse(tag(b, "pubDate") || tag(b, "published") || tag(b, "updated") || tag(b, "dc:date")) || 0;
+    const date = parseDate(tag(b, "pubDate") || tag(b, "published") || tag(b, "updated") || tag(b, "dc:date"));
     return {
       source: sourceId,
       title: strip(tag(b, "title")),
@@ -70,10 +74,13 @@ function parseFeed(xml, sourceId) {
 
 async function fetchSource(s) {
   const res = await fetch(s.url, {
-    headers: { "User-Agent": "Mozilla/5.0 (compatible; InsideReportBD/1.0)" },
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36",
+      "Accept": "application/rss+xml, application/xml, text/xml, */*"
+    },
     cf: { cacheTtl: 300, cacheEverything: true }
   });
-  if (!res.ok) throw new Error(s.id + " " + res.status);
+  if (!res.ok) throw new Error("HTTP " + res.status);
   return parseFeed(await res.text(), s.id);
 }
 
@@ -82,8 +89,22 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
 
     const url = new URL(request.url);
+
+    if (url.pathname === "/api/check") {
+      const report = await Promise.all(SOURCES.map(async (s) => {
+        try {
+          const items = await fetchSource(s);
+          const newest = items.reduce((m, i) => Math.max(m, i.date), 0);
+          return { id: s.id, ok: items.length > 0, items: items.length, newest: newest ? new Date(newest).toISOString() : null };
+        } catch (e) {
+          return { id: s.id, ok: false, error: String(e.message || e) };
+        }
+      }));
+      return new Response(JSON.stringify(report, null, 2), { headers: CORS });
+    }
+
     if (url.pathname !== "/api/news") {
-      return new Response(JSON.stringify({ ok: true, message: "Inside Report BD API", try: "/api/news" }), { headers: CORS });
+      return new Response(JSON.stringify({ ok: true, message: "Inside Report BD API", try: ["/api/news", "/api/check"] }), { headers: CORS });
     }
 
     const cache = caches.default;
@@ -95,9 +116,11 @@ export default {
     let items = [];
     const failed = [];
     results.forEach((r, i) => {
-      if (r.status === "fulfilled") items = items.concat(r.value);
+      if (r.status === "fulfilled" && r.value.length) items = items.concat(r.value);
       else failed.push(SOURCES[i].id);
     });
+    const cutoff = Date.now() - MAX_AGE_MS;
+    items = items.filter((i) => i.date >= cutoff);
     items.sort((a, b) => b.date - a.date);
 
     const response = new Response(

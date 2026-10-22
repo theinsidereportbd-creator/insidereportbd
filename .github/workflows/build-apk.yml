@@ -31,6 +31,12 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Apply app icon
+        run: |
+          if [ -f icons.zip ]; then
+            unzip -o icons.zip -d android/app/src/main/res/
+          fi
+
       - name: Sync web files
         run: npx cap sync android
 

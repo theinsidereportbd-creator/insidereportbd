@@ -1,0 +1,7 @@
+{
+  "name": "দ্য ইনসাইড রিপোর্ট বিডি",
+  "description": "দ্য ইনসাইড রিপোর্ট বিডি - বাংলাদেশের প্রধান প্রধান পত্রিকার সর্বশেষ খবর এক জায়গায়।",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

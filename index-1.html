@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a2a66">
+  <title>দ্য ইনসাইড রিপোর্ট বিডি</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <div class="brandrow">
+      <div class="brand">
+        <div class="mark" role="img" aria-label="The Inside Report BD"></div>
+        <div class="brandtext">
+          <h1>The Inside Report <span>BD</span></h1>
+          <p>তথ্য-প্রমাণ ভিত্তিক অনুসন্ধানী প্রতিবেদন</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="btnTheme" class="iconbtn" aria-label="থিম বদলান"></button>
+        <button id="btnRefresh" class="iconbtn" aria-label="রিফ্রেশ"></button>
+      </div>
+    </div>
+
+    <div class="dateline">
+      <span id="today"></span>
+      <span class="live"><i></i>সরাসরি আপডেট</span>
+    </div>
+
+    <label class="searchbox">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="search" type="search" placeholder="খবর খুঁজুন..." autocomplete="off">
+    </label>
+
+    <div id="chips" class="chips"></div>
+  </header>
+
+  <main>
+    <a id="ticker" class="ticker" hidden></a>
+    <div id="status" class="status" hidden></div>
+    <div id="hero"></div>
+    <div id="list" class="feed"></div>
+    <div class="footlogo" role="img" aria-label="TIR"></div>
+    <p class="foot">এই অ্যাপ বিভিন্ন সংবাদমাধ্যমের শিরোনাম ও সংক্ষিপ্ত সারাংশ দেখায়। পূর্ণ খবর পড়তে মূল সাইটে যান। সব খবরের স্বত্ব সংশ্লিষ্ট সংবাদমাধ্যমের।</p>
+  </main>
+
+  <nav>
+    <button id="tabAll" class="active"><span class="ico" data-ico="home"></span><span>সব খবর</span></button>
+    <button id="tabSaved"><span class="ico" data-ico="bookmark"></span><span>সংরক্ষিত</span><b id="savedCount" hidden></b></button>
+  </nav>
+
+  <script src="config.js"></script>
+  <script src="sources.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

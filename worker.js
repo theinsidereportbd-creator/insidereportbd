@@ -125,7 +125,8 @@ export default {
       else failed.push(SOURCES[i].id);
     });
     const cutoff = Date.now() - MAX_AGE_MS;
-    items = items.filter((i) => i.date >= cutoff);
+    // নিজের ব্লগ (tirbd) এর সব পোস্ট দেখাবে; অন্যদের ১০ দিনের বেশি পুরোনো খবর বাদ
+    items = items.filter((i) => i.source === "tirbd" || i.date >= cutoff);
     items.sort((a, b) => b.date - a.date);
     // একটি সোর্স যেন তালিকা দখল না করে: প্রতি সোর্স থেকে সর্বোচ্চ ৩০টি
     const count = {};
